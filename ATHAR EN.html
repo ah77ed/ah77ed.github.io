@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATHAR — Architectural Archive</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230E0F0C'/%3E%3Crect x='0' y='0' width='64' height='5' fill='%23B07A3E'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial, sans-serif' font-weight='700' font-size='30' fill='%23ECE7DC'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ===== ATHAR palette — dark stone / warm bronze accent ===== */
+    --bg:#13120F;
+    --bg-raised:#1A1916;
+    --panel:#1E1C18;
+    --stone:#8A8478;
+    --stone-light:#B4AEA1;
+    --ink:#ECE7DC;
+    --ink-dim:#C9C3B5;
+    --signal:#B07A3E;
+    --signal-light:#D39C5E;
+    --line: rgba(236,231,220,0.10);
+    --line-strong: rgba(236,231,220,0.20);
+    --overlay-deep: rgba(13,12,9,0.86);
+    --overlay-mid: rgba(13,12,9,0.62);
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:400;
+    line-height:1.7;
+    overflow-x:hidden;
+  }
+
+  h1,h2,h3,.display{
+    font-family:'Oswald',sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+  }
+
+  .mono{
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--signal);color:var(--bg);}
+
+  /* film grain — subtle, unifies all photo + flat sections */
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:999;
+    opacity:0.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* dimension line component */
+  .dim-line{
+    display:flex;align-items:center;gap:0.6rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.72rem;
+    color:var(--stone);
+    letter-spacing:0.04em;
+  }
+  .dim-line .seg{
+    flex:1;height:1px;background:var(--line-strong);
+    position:relative;
+  }
+  .dim-line .seg::before, .dim-line .seg::after{
+    content:'';position:absolute;top:-3px;width:1px;height:7px;background:var(--line-strong);
+  }
+  .dim-line .seg::before{right:0;}
+  .dim-line .seg::after{left:0;}
+
+  /* ===== NAV ===== */
+  header{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1.3rem 4vw;
+    background:rgba(19,18,15,0.82);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  header .brand{
+    font-family:'Oswald',sans-serif;
+    font-size:1.15rem;font-weight:600;text-transform:uppercase;
+    letter-spacing:0.08em;
+    display:flex;align-items:center;gap:0.7rem;
+  }
+  header .brand .dot{
+    width:7px;height:7px;background:var(--signal);
+    flex-shrink:0;
+  }
+  .logo-mark{
+    width:30px;height:30px;flex-shrink:0;
+  }
+  .logo-mark .lm-bg{fill:var(--panel);}
+  .logo-mark .lm-glyph{fill:var(--ink);}
+  .logo-mark .lm-accent{fill:var(--signal);}
+  nav{display:flex;gap:2.4rem;font-size:0.82rem;}
+  nav a{
+    font-family:'JetBrains Mono',monospace;
+    text-transform:uppercase;letter-spacing:0.06em;
+    position:relative;padding-bottom:4px;color:var(--stone);
+    transition:color .25s ease;
+  }
+  nav a::before{
+    content:'';position:absolute;left:0;bottom:0;
+    width:0;height:1px;background:var(--signal);
+    transition:width .3s ease;
+  }
+  nav a:hover, nav a.active{color:var(--ink);}
+  nav a:hover::before, nav a.active::before{width:100%;}
+
+  .menu-toggle{display:none;}
+
+  /* ===== PHOTO BACKDROP — shared by hero + section backers ===== */
+  .photo-backdrop{
+    position:absolute;inset:0;z-index:0;
+    background-size:cover;background-position:center;
+    filter:grayscale(0.35) contrast(1.05) brightness(0.75);
+  }
+  .photo-backdrop::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg, var(--overlay-deep) 0%, var(--overlay-mid) 45%, var(--overlay-deep) 100%);
+  }
+  .photo-backdrop.flat::after{
+    background:var(--overlay-deep);
+  }
+
+  /* ===== HERO ===== */
+  .hero{
+    min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center;
+    position:relative;
+    padding:8rem 4vw 3rem;
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+  }
+  .hero .photo-backdrop{
+    background-image:url('https://images.unsplash.com/photo-1769284047139-67dff10db5d3?fm=jpg&q=80&w=2400&auto=format&fit=crop');
+  }
+  .hero-grid{
+    max-width:1280px;width:100%;margin:0 auto;
+    display:grid;grid-template-columns:1fr;
+    position:relative;z-index:1;
+  }
+  .coord{
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;
+    color:var(--stone-light);letter-spacing:0.08em;
+    display:flex;justify-content:space-between;
+    padding-bottom:1.6rem;border-bottom:1px solid var(--line-strong);margin-bottom:2.4rem;
+  }
+  .coord span.flag{color:var(--signal-light);}
+
+  .hero h1{
+    font-size:clamp(2.8rem, 8vw, 6.5rem);
+    line-height:0.96;
+    color:var(--ink);
+  }
+  .hero h1 .accent{color:var(--signal-light);}
+
+  .hero-sub{
+    display:grid;grid-template-columns:1fr 1fr;gap:3rem;
+    margin-top:3rem;
+    padding-top:2rem;border-top:1px solid var(--line-strong);
+  }
+  .hero-sub p{
+    font-size:1.05rem;color:var(--ink-dim);max-width:46ch;
+  }
+  .hero-cta{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;}
+  .btn{
+    display:inline-flex;align-items:center;gap:0.7rem;
+    padding:0.95rem 1.7rem;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;
+    border:1px solid var(--line-strong);
+    transition:all .25s ease;
+  }
+  .btn-fill{background:var(--signal);color:var(--bg);border-color:var(--signal);}
+  .btn-fill:hover{background:var(--signal-light);border-color:var(--signal-light);}
+  .btn-line{color:var(--ink);}
+  .btn-line:hover{border-color:var(--ink);}
+
+  /* ===== SECTION SHARED ===== */
+  section{padding:6rem 4vw;border-bottom:1px solid var(--line);position:relative;}
+  .wrap{max-width:1280px;margin:0 auto;position:relative;z-index:1;}
+
+  .section-head{
+    display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:end;
+    margin-bottom:3.5rem;
+  }
+  .section-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.78rem;color:var(--signal-light);
+    border:1px solid var(--signal);
+    padding:0.3rem 0.6rem;
+    height:fit-content;
+  }
+  .section-head h2{
+    font-size:clamp(1.8rem,3.4vw,2.6rem);color:var(--ink);
+  }
+  .section-head p{
+    grid-column:1/-1;
+    margin-top:0.6rem;color:var(--stone-light);font-size:1rem;max-width:60ch;
+  }
+
+  /* ===== ABOUT STRIP (with real structure photo frame) ===== */
+  .about-strip{background:var(--bg-raised);}
+  .about-grid{
+    display:grid;grid-template-columns:0.7fr 1.3fr;gap:4rem;
+  }
+  .about-frame{
+    aspect-ratio:3/4;
+    border:1px solid var(--line-strong);
+    position:relative;
+    overflow:hidden;
+    background-image:url('https://images.unsplash.com/photo-1742278970780-5183fa6329fd?fm=jpg&q=80&w=1400&auto=format&fit=crop');
+    background-size:cover;background-position:center;
+    filter:grayscale(0.25) contrast(1.05);
+  }
+  .about-frame::before{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg, rgba(13,12,9,0.1) 0%, rgba(13,12,9,0.55) 100%);
+  }
+  .about-frame::after{
+    content:'A';
+    position:absolute;bottom:1.2rem;left:1.2rem;
+    font-family:'Oswald',sans-serif;font-size:3.5rem;font-weight:700;
+    color:rgba(236,231,220,0.5);
+    z-index:1;
+  }
+  .about-frame .crosshair{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:36px;height:36px;z-index:1;
+  }
+  .about-frame .crosshair::before, .about-frame .crosshair::after{
+    content:'';position:absolute;background:var(--signal-light);
+  }
+  .about-frame .crosshair::before{top:50%;left:0;right:0;height:1px;}
+  .about-frame .crosshair::after{left:50%;top:0;bottom:0;width:1px;}
+
+  .about-text h3{font-size:1.7rem;color:var(--ink);margin-bottom:1.2rem;font-weight:500;}
+  .about-text p{color:var(--ink-dim);margin-bottom:1rem;max-width:60ch;}
+  .spec-row{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    margin-top:2.2rem;background:var(--line);
+  }
+  .spec-item{background:var(--panel);padding:1.2rem 1.4rem;}
+  .spec-item .k{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.06em;}
+  .spec-item .v{font-family:'Oswald',sans-serif;font-size:1.1rem;color:var(--ink);margin-top:0.4rem;}
+
+  /* ===== PROJECTS GRID ===== */
+  .projects-grid{
+    display:grid;grid-template-columns:repeat(3, 1fr);gap:1px;
+    background:var(--line);
+  }
+  .project-card{
+    position:relative;
+    aspect-ratio:1/1.1;
+    background:var(--bg);
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:1.6rem;
+    overflow:hidden;
+    transition:background .3s ease;
+  }
+  .project-card:hover{background:var(--panel);}
+  .project-card .ptag{
+    font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--signal-light);
+    display:flex;justify-content:space-between;
+  }
+  .empty-mark{
+    align-self:center;justify-self:center;
+    margin:auto;
+    width:50px;height:50px;
+    border:1px dashed var(--line-strong);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;color:var(--stone);font-size:1.2rem;
+  }
+  .project-card .pfoot{
+    border-top:1px solid var(--line);padding-top:1rem;
+  }
+  .project-card .ptitle{
+    font-family:'Oswald',sans-serif;font-size:1.15rem;color:var(--ink);text-transform:uppercase;
+  }
+  .project-card .ptype{
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--stone);margin-top:0.3rem;
+  }
+
+  /* ===== PROCESS ===== */
+  .process-list{display:flex;flex-direction:column;}
+  .process-row{
+    display:grid;grid-template-columns:80px 1fr 2fr;gap:2rem;
+    padding:1.8rem 0;border-top:1px solid var(--line);
+    align-items:center;
+  }
+  .process-list .process-row:last-child{border-bottom:1px solid var(--line);}
+  .process-row .pnum{font-family:'JetBrains Mono',monospace;color:var(--signal-light);font-size:0.95rem;}
+  .process-row h4{font-family:'Oswald',sans-serif;font-size:1.15rem;color:var(--ink);text-transform:uppercase;font-weight:500;}
+  .process-row p{font-size:0.92rem;color:var(--stone-light);}
+
+  /* ===== CTA STRIP ===== */
+  .cta-strip{
+    text-align:center;background:var(--bg-raised);
+  }
+  .cta-strip h2{font-size:clamp(2rem,5vw,3.6rem);color:var(--ink);max-width:20ch;margin:0 auto;}
+  .cta-strip p.mono{color:var(--stone-light);margin-top:1rem;}
+  .cta-strip .btn-fill{margin-top:2.2rem;}
+
+  footer{
+    padding:2.4rem 4vw;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.74rem;color:var(--stone);
+    flex-wrap:wrap;gap:1rem;
+  }
+  .foot-links{display:flex;gap:1.6rem;}
+  .foot-links a:hover{color:var(--signal-light);}
+
+  /* ===== PAGES ===== */
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* ===== ABOUT PAGE ===== */
+  .about-hero{padding-top:9rem;position:relative;z-index:1;}
+  .about-hero h1{font-size:clamp(2.2rem,5vw,3.8rem);color:var(--ink);max-width:18ch;}
+  .about-hero p{margin-top:1.4rem;color:var(--ink-dim);max-width:54ch;font-size:1.05rem;}
+
+  .timeline{display:flex;flex-direction:column;}
+  .tl-row{
+    display:grid;grid-template-columns:140px 1fr;gap:2rem;
+    padding:2rem 0;border-top:1px solid var(--line);
+  }
+  .timeline .tl-row:last-child{border-bottom:1px solid var(--line);}
+  .tl-tag{font-family:'JetBrains Mono',monospace;color:var(--signal-light);font-size:0.85rem;}
+  .tl-text h4{font-family:'Oswald',sans-serif;font-size:1.2rem;color:var(--ink);text-transform:uppercase;font-weight:500;margin-bottom:0.4rem;}
+  .tl-text p{font-size:0.95rem;color:var(--stone-light);}
+
+  .values-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  }
+  .value-card{
+    background:var(--bg);padding:2.2rem 1.8rem;
+  }
+  .value-card .vn{font-family:'JetBrains Mono',monospace;color:var(--signal-light);font-size:0.78rem;}
+  .value-card h4{font-family:'Oswald',sans-serif;font-size:1.25rem;color:var(--ink);text-transform:uppercase;font-weight:500;margin:0.8rem 0 0.7rem;}
+  .value-card p{font-size:0.92rem;color:var(--stone-light);}
+
+  /* ===== CONTACT PAGE ===== */
+  .contact-wrap{
+    display:grid;grid-template-columns:1fr 1fr;gap:5rem;
+    padding-top:9rem;position:relative;z-index:1;
+  }
+  .contact-info h1{font-size:clamp(2rem,4.4vw,3.2rem);color:var(--ink);margin-bottom:1.2rem;}
+  .contact-info p.lede{color:var(--ink-dim);margin-bottom:2.2rem;max-width:42ch;}
+  .contact-line{
+    display:flex;align-items:center;gap:1rem;
+    padding:1.1rem 0;border-top:1px solid var(--line);
+  }
+  .contact-line:last-of-type{border-bottom:1px solid var(--line);}
+  .contact-line .clabel{
+    font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;
+    color:var(--stone);width:90px;flex-shrink:0;
+  }
+  .contact-line a:hover{color:var(--signal-light);}
+
+  .social-row{display:flex;gap:1rem;margin-top:2rem;flex-wrap:wrap;}
+  .social-pill{
+    font-family:'JetBrains Mono',monospace;font-size:0.78rem;
+    padding:0.7rem 1.3rem;border:1px solid var(--line-strong);
+    transition:all .25s ease;
+  }
+  .social-pill:hover{border-color:var(--signal-light);color:var(--signal-light);}
+
+  form{display:flex;flex-direction:column;gap:1.4rem;}
+  .field{display:flex;flex-direction:column;gap:0.5rem;}
+  .field label{font-family:'JetBrains Mono',monospace;font-size:0.74rem;color:var(--stone);text-transform:uppercase;letter-spacing:0.05em;}
+  .field input, .field textarea{
+    border:1px solid var(--line-strong);background:transparent;
+    padding:0.85rem 1rem;
+    font-family:'Inter',sans-serif;font-size:1rem;color:var(--ink);
+    transition:border-color .25s ease;
+  }
+  .field input:focus, .field textarea:focus{outline:none;border-color:var(--signal);}
+  .field textarea{resize:vertical;min-height:110px;}
+  form .btn{align-self:flex-start;margin-top:0.6rem;cursor:pointer;background:var(--signal);color:var(--bg);border-color:var(--signal);}
+  form .btn:hover{background:var(--signal-light);border-color:var(--signal-light);}
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 880px){
+    nav{
+      position:fixed;top:0;bottom:0;left:0;right:0;
+      background:var(--bg);
+      flex-direction:column;justify-content:center;align-items:center;
+      gap:2rem;font-size:1.1rem;
+      transform:translateY(-100%);
+      transition:transform .4s ease;
+      z-index:90;
+    }
+    nav.open{transform:translateY(0);}
+    .menu-toggle{
+      display:flex;flex-direction:column;gap:5px;
+      background:none;border:none;cursor:pointer;z-index:101;padding:0.4rem;
+    }
+    .menu-toggle span{width:22px;height:2px;background:var(--ink);}
+
+    .hero-sub{grid-template-columns:1fr;gap:1.6rem;}
+    .about-grid{grid-template-columns:1fr;}
+    .about-frame{max-width:260px;margin:0 auto;}
+    .projects-grid{grid-template-columns:1fr 1fr;}
+    .process-row{grid-template-columns:50px 1fr;}
+    .process-row p{grid-column:1/-1;}
+    .values-grid{grid-template-columns:1fr;}
+    .contact-wrap{grid-template-columns:1fr;gap:3rem;padding-top:7rem;}
+    .spec-row{grid-template-columns:1fr;}
+  }
+  @media (max-width: 560px){
+    .projects-grid{grid-template-columns:1fr;}
+    section{padding:4rem 5vw;}
+    .coord{flex-direction:column;gap:0.4rem;align-items:flex-start;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;animation:none !important;}
+  }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--signal);outline-offset:3px;
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <div class="brand">
+    <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <rect class="lm-bg" x="0" y="0" width="32" height="32"/>
+      <rect class="lm-accent" x="0" y="0" width="32" height="3"/>
+      <text class="lm-glyph" x="16" y="24" text-anchor="middle" font-family="Oswald, sans-serif" font-size="16" font-weight="700">A</text>
+    </svg>
+    ATHAR
+  </div>
+  <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="nav">
+    <a href="#" data-page="home" class="active">01 / Home</a>
+    <a href="#" data-page="projects">02 / Projects</a>
+  </nav>
+</header>
+
+<!-- ============ HOME ============ -->
+<main class="page active" id="page-home">
+
+  <section class="hero" style="border-bottom:1px solid var(--line);">
+    <div class="photo-backdrop"></div>
+    <div class="hero-grid">
+      <h1>Architecture<br>is structure, <span class="accent">before</span><br>it is form.</h1>
+      <div class="hero-sub">
+        <p>An architectural design studio. We work on residential, commercial, and interior projects that begin from structural logic — load, material, and clarity — not from ornament.</p>
+        <div class="hero-cta">
+          <a href="#" class="btn btn-fill" data-page="projects">Project Archive ↗</a>
+          <a href="#" class="btn btn-line" data-page="contact">Contact</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-strip">
+    <div class="wrap about-grid">
+      <div class="about-frame"><div class="crosshair"></div></div>
+      <div class="about-text">
+        <div class="dim-line"><span class="seg"></span><span>About the Work</span><span class="seg"></span></div>
+        <h3 style="margin-top:1.4rem;">Architecture by logic, not ornament</h3>
+        <p>I believe any good space reads from its structure before its facade. We work on residential, commercial, and interior design that begins from the structural grid and raw material, leaving ornament to those who need it.</p>
+        <p>This archive grows with every new project, documented precisely from concept to execution.</p>
+        <div class="spec-row">
+          <div class="spec-item"><div class="k">Focus</div><div class="v">Multidisciplinary</div></div>
+          <div class="spec-item"><div class="k">Location</div><div class="v">Iraq</div></div>
+          <div class="spec-item"><div class="k">Status</div><div class="v">Active</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">01</div>
+        <h2>Project Register</h2>
+        <p>An empty archive awaiting its first completed project. Every slot is reserved, numbered, and ready for documentation.</p>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card">
+          <div class="ptag"><span>PRJ—01</span><span>—</span></div>
+          <div class="empty-mark">+</div>
+          <div class="pfoot"><div class="ptitle">Pending</div><div class="ptype">Residential Villa</div></div>
+        </div>
+        <div class="project-card">
+          <div class="ptag"><span>PRJ—02</span><span>—</span></div>
+          <div class="empty-mark">+</div>
+          <div class="pfoot"><div class="ptitle">Pending</div><div class="ptype">Apartment Complex</div></div>
+        </div>
+        <div class="project-card">
+          <div class="ptag"><span>PRJ—03</span><span>—</span></div>
+          <div class="empty-mark">+</div>
+          <div class="pfoot"><div class="ptitle">Pending</div><div class="ptype">Interior Design</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--bg-raised);">
+    <div class="wrap">
+      <div class="section-head" style="margin-bottom:1rem;">
+        <div class="section-num">02</div>
+        <h2>Working Methodology</h2>
+      </div>
+      <div class="process-list">
+        <div class="process-row">
+          <div class="pnum">01</div>
+          <h4>Structural Reading</h4>
+          <p>Understanding load, soil, and climate before any formal decision.</p>
+        </div>
+        <div class="process-row">
+          <div class="pnum">02</div>
+          <h4>Raw Material</h4>
+          <p>Concrete, brick, steel — left exposed, not buried under unnecessary layers.</p>
+        </div>
+        <div class="process-row">
+          <div class="pnum">03</div>
+          <h4>Grid and System</h4>
+          <p>Every space is built on a clear column grid that defines the distribution logic.</p>
+        </div>
+        <div class="process-row">
+          <div class="pnum">04</div>
+          <h4>Construction Documentation</h4>
+          <p>From concept to precise, buildable drawings, within a realistic budget.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-strip" style="border-bottom:none;">
+    <div class="wrap">
+      <h2>Every project is documented here with precision.</h2>
+      <p class="mono">Follow the archive as it takes shape, project by project.</p>
+      <a href="#" class="btn btn-fill" data-page="contact">Get in touch ↗</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ PROJECTS ============ -->
+<main class="page" id="page-projects">
+  <section style="padding-top:9rem;">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">02</div>
+        <h2>Project Register</h2>
+        <p>An archive that grows gradually. Every card is numbered, awaiting documentation of a new project.</p>
+      </div>
+      <div class="projects-grid">
+        <div class="project-card"><div class="ptag"><span>PRJ—01</span><span>—</span></div><div class="empty-mark">01</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Residential Villa</div></div></div>
+        <div class="project-card"><div class="ptag"><span>PRJ—02</span><span>—</span></div><div class="empty-mark">02</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Residential Complex</div></div></div>
+        <div class="project-card"><div class="ptag"><span>PRJ—03</span><span>—</span></div><div class="empty-mark">03</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Interior Design</div></div></div>
+        <div class="project-card"><div class="ptag"><span>PRJ—04</span><span>—</span></div><div class="empty-mark">04</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Academic Project</div></div></div>
+        <div class="project-card"><div class="ptag"><span>PRJ—05</span><span>—</span></div><div class="empty-mark">05</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Residential Villa</div></div></div>
+        <div class="project-card"><div class="ptag"><span>PRJ—06</span><span>—</span></div><div class="empty-mark">06</div><div class="pfoot"><div class="ptitle">Coming Soon</div><div class="ptype">Conceptual Study</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-strip" style="border-bottom:none;">
+    <div class="wrap">
+      <h2>Got a project in mind?</h2>
+      <p class="mono">Reach out and let's talk about your idea.</p>
+      <a href="#" class="btn btn-fill" data-page="contact">Message Me ↗</a>
+    </div>
+  </section>
+</main>
+
+<!-- ============ ABOUT ============ -->
+<main class="page" id="page-about">
+  <section style="border-bottom:1px solid var(--line); overflow:hidden;">
+    <div class="photo-backdrop flat" style="background-image:url('https://images.unsplash.com/photo-1763771420303-0f11ccf613d1?fm=jpg&q=80&w=2400&auto=format&fit=crop'); opacity:0.5;"></div>
+    <div class="wrap about-hero">
+      <div class="dim-line"><span class="seg"></span><span>About</span><span class="seg"></span></div>
+      <h1 style="margin-top:1.2rem;">ATHAR — Architectural Design Studio.</h1>
+      <p>We work on residential, commercial, and interior projects with one methodology: structure precedes form. This archive documents every project with precision, from the first idea to the construction details.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">01</div>
+        <h2>Scope of Work</h2>
+      </div>
+      <div class="timeline">
+        <div class="tl-row">
+          <div class="tl-tag mono">01</div>
+          <div class="tl-text">
+            <h4>Residential Design</h4>
+            <p>Villas and apartments, from the initial layout to precise construction details.</p>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-tag mono">02</div>
+          <div class="tl-text">
+            <h4>Interior Design</h4>
+            <p>Interior spaces that align with the structural logic of the building as a whole.</p>
+          </div>
+        </div>
+        <div class="tl-row">
+          <div class="tl-tag mono">03</div>
+          <div class="tl-text">
+            <h4>Design Consulting</h4>
+            <p>Accompanying the project from the first idea through to construction-ready documentation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:var(--bg-raised);">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="section-num">02</div>
+        <h2>Principles</h2>
+      </div>
+      <div class="values-grid">
+        <div class="value-card">
+          <div class="vn mono">01</div>
+          <h4>Structure First</h4>
+          <p>Every space is designed around its structural logic before any formal decision.</p>
+        </div>
+        <div class="value-card">
+          <div class="vn mono">02</div>
+          <h4>Material As-Is</h4>
+          <p>Concrete and brick are left exposed, not hidden behind excessive finishes.</p>
+        </div>
+        <div class="value-card">
+          <div class="vn mono">03</div>
+          <h4>Construction Precision</h4>
+          <p>A strong design has to be genuinely buildable, within a realistic budget.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ CONTACT ============ -->
+<main class="page" id="page-contact">
+  <section style="border-bottom:none;">
+    <div class="wrap contact-wrap">
+      <div class="contact-info">
+        <div class="dim-line"><span class="seg"></span><span>Contact</span><span class="seg"></span></div>
+        <h1 style="margin-top:1.2rem;">Let's talk about your idea.</h1>
+        <p class="lede">Whether you have a project in mind, or just want to follow the archive as it takes shape — get in touch here.</p>
+
+        <div class="contact-line">
+          <span class="clabel">Email</span>
+          <a href="mailto:studio@example.com">studio@example.com</a>
+        </div>
+        <div class="contact-line">
+          <span class="clabel">Location</span>
+          <span>Iraq</span>
+        </div>
+
+        <div class="social-row">
+          <a href="#" class="social-pill">Instagram</a>
+          <a href="#" class="social-pill">LinkedIn</a>
+          <a href="#" class="social-pill">Behance</a>
+        </div>
+      </div>
+
+      <form onsubmit="event.preventDefault(); alert('This is a demo form — it needs to be connected to an actual email service later.');">
+        <div class="field">
+          <label for="name">Name</label>
+          <input type="text" id="name" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="field">
+          <label for="msg">Message</label>
+          <textarea id="msg" required></textarea>
+        </div>
+        <button type="submit" class="btn">Send ↗</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="brand" style="font-size:0.95rem;">
+    <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true" style="width:24px;height:24px;">
+      <rect class="lm-bg" x="0" y="0" width="32" height="32"/>
+      <rect class="lm-accent" x="0" y="0" width="32" height="3"/>
+      <text class="lm-glyph" x="16" y="24" text-anchor="middle" font-family="Oswald, sans-serif" font-size="16" font-weight="700">A</text>
+    </svg>
+    ATHAR
+  </div>
+  <div class="foot-links">
+    <a href="#" data-page="home">Home</a>
+    <a href="#" data-page="projects">Projects</a>
+    <a href="#" data-page="about">About</a>
+    <a href="#" data-page="contact">Contact</a>
+  </div>
+  <div>© 2026</div>
+</footer>
+
+<script>
+  const navLinks = document.querySelectorAll('[data-page]');
+  const pages = document.querySelectorAll('.page');
+  const nav = document.getElementById('nav');
+  const menuToggle = document.getElementById('menuToggle');
+
+  function goTo(pageId){
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    document.querySelectorAll('nav a').forEach(a => {
+      a.classList.toggle('active', a.dataset.page === pageId);
+    });
+    window.scrollTo({top:0, behavior:'instant'});
+    nav.classList.remove('open');
+  }
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      goTo(link.dataset.page);
+    });
+  });
+
+  menuToggle.addEventListener('click', () => {
+    nav.classList.toggle('open');
+  });
+</script>
+
+</body>
+</html>
